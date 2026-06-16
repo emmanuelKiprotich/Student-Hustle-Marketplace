@@ -1,0 +1,29 @@
+{
+  "name": "campus-marketplace-backend",
+  "version": "1.0.0",
+  "description": "API Gateway for Campus Peer-to-Peer Side Hustle Marketplace",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "express",
+    "postgres",
+    "campus-marketplace",
+    "p2p"
+  ],
+  "author": "Mutua Wilson Mwendwa, Emmanuel Kiprotich",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.2"
+  }
+}
