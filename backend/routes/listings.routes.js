@@ -6,7 +6,9 @@ const auth = require('../middleware/auth.middleware');
 
 // Public Service Catalogue Discovery & Search Search Filter Framework
 router.get('/search', async (req, res) => {
-    const { category, keyword } = req.query;
+    // 🔴 Crucial change: Accept category_id as a query parameter
+    const { category_id, keyword } = req.query; 
+    
     try {
         let sql = `
             SELECT l.*, c.name as category_name, u.name as seller_name 
@@ -17,20 +19,25 @@ router.get('/search', async (req, res) => {
         `;
         const params = [];
 
-        if (category) {
-            params.push(category);
-            sql += ` AND c.name = $${params.length}`;
+        // 1. Handle numeric category filtering safely
+        if (category_id) {
+            params.push(parseInt(category_id));
+            sql += ` AND l.category_id = $${params.length}`;
         }
 
+        // 2. Handle textual search keyword filtering
         if (keyword) {
             params.push(`%${keyword}%`);
             sql += ` AND (l.title ILIKE $${params.length} OR l.description ILIKE $${params.length})`;
         }
 
+        // Return latest listings first
         sql += ' ORDER BY l.created_at DESC';
+
         const result = await db.query(sql, params);
         res.status(200).json({ success: true, listings: result.rows });
     } catch (err) {
+        console.error("Backend filter engine failure:", err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
