@@ -7,7 +7,7 @@ const listingRoutes = require('./routes/listings.routes');
 const bookingRoutes = require('./routes/bookings.routes');
 
 const app = express();
-const PORT = 5001;
+const PORT = 5000;
 
 // Enforce configuration middleware sequences
 app.use(cors());

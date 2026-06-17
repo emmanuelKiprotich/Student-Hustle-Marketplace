@@ -65,6 +65,40 @@ router.post('/reviews', auth, async (req, res) => {
     } catch (err) {
         res.status(500).json({ success: false, message: 'Review creation rejected. Ensure single metric submission per booking execution boundary.' });
     }
+
+});
+
+ router.patch('/:bookingId/complete', auth, async (req, res) => {
+    const { bookingId } = req.params;
+    try {
+        // Enforce governance: Only the service provider who owns the listing can mark it complete
+        const ownershipCheck = await db.query(`
+            SELECT b.id 
+            FROM bookings b
+            JOIN listings l ON b.listing_id = l.id
+            WHERE b.id = $1 AND l.seller_id = $2
+        `, [bookingId, req.user.id]);
+
+        if (ownershipCheck.rows.length === 0) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Unauthorized. You must be the assigned provider to close this task transaction.' 
+            });
+        }
+
+        // Update booking row configuration status field
+        await db.query(
+            "UPDATE bookings SET status = 'completed' WHERE id = $1",
+            [bookingId]
+        );
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Transaction completed. Peer settlement logging finalized.' 
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
 });
 
 module.exports = router;
