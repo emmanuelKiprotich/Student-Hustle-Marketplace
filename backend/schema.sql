@@ -60,3 +60,6 @@ INSERT INTO categories (name, description) VALUES
 ALTER TABLE users 
 ADD COLUMN tfa_code VARCHAR(6) DEFAULT NULL,
 ADD COLUMN tfa_expires_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+
+ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT false;
+UPDATE users SET is_admin = true WHERE email = 'emmanuel.kiprotich@strathmore.edu';
