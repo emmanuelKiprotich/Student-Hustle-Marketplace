@@ -4,7 +4,9 @@
   "description": "API Gateway for Campus Peer-to-Peer Side Hustle Marketplace",
   "main": "server.js",
   "scripts": {
+    "prestart": "npx kill-port 5000",
     "start": "node server.js",
+    "predev": "npx kill-port 5000",
     "dev": "nodemon server.js"
   },
   "keywords": [
@@ -21,9 +23,11 @@
     "dotenv": "^16.6.1",
     "express": "^4.22.2",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^9.0.1",
     "pg": "^8.21.0"
   },
   "devDependencies": {
+    "kill-port": "^2.0.1",
     "nodemon": "^3.1.2"
   }
 }

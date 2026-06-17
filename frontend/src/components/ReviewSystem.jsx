@@ -1,50 +1,66 @@
-// components/ReviewSystem.jsx
-import React, { useState } from 'react';
+// frontend/src/components/ReviewSystem.jsx
+import React, { useState, useEffect } from 'react';
 
 const ReviewSystem = ({ bookingId, token }) => {
-    const [rating, setRating] = useState(5);
+    const [reviews, setReviews] = useState([]);
+    const [rating, setRating] = useState('5');
     const [comment, setComment] = useState('');
-    const [uiStatus, setUiStatus] = useState('');
+    const [msg, setMsg] = useState('');
 
-    const handlePublishMetrics = async (e) => {
+    const fetchReviews = async () => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/bookings/reviews/${bookingId}`);
+            const data = await res.json();
+            if (data.success) setReviews(data.reviews);
+        } catch (err) { console.error(err); }
+    };
+
+    useEffect(() => { fetchReviews(); }, [bookingId]);
+
+    const handleSubmitReview = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:5000/api/bookings/reviews', {
+            const res = await fetch('http://localhost:5000/api/bookings/reviews', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ bookingId, rating, comment })
+                body: JSON.stringify({ bookingId, rating: parseInt(rating), comment })
             });
-            const data = await response.json();
-
+            const data = await res.json();
             if (data.success) {
-                setUiStatus('Review published successfully. Peer reputation matrix updated.');
-            } else {
-                setUiStatus(`Submission denied: ${data.message}`);
-            }
-        } catch (err) {
-            setUiStatus('Network error occurred while transmitting metrics.');
-        }
+                setMsg('🎉 Feedback submitted successfully!');
+                setComment('');
+                fetchReviews();
+            } else { setMsg(`Error: ${data.message}`); }
+        } catch (err) { setMsg('Failed to transmit review parameters.'); }
     };
 
     return (
-        <div style={{ background: '#f9f9f9', padding: '20px', borderRadius: '6px', border: '1px dashed #ccc' }}>
-            <h4 style={{ margin: '0 0 10px 0', color: '#333' }}>Fulfillment Loop Review Feedback</h4>
-            <form onSubmit={handlePublishMetrics}>
-                <label style={{ fontSize: '0.9em', fontWeight: 'bold' }}>Rating Assignment Metric:</label><br/>
-                <select value={rating} onChange={(e) => setRating(parseInt(e.target.value))} style={{ width: '100%', padding: '8px', margin: '5px 0 15px 0' }}>
-                    <option value="5">⭐⭐⭐⭐⭐ Excellent Quality Execution</option>
-                    <option value="4">⭐⭐⭐⭐ Satisfactory Metrics Delivered</option>
-                    <option value="3">⭐⭐⭐ Neutral Experience Vector</option>
-                    <option value="2">⭐⭐ Unsatisfactory Output Quality</option>
-                    <option value="1">⭐ Critical Failure / Non-Delivery</option>
-                </select><br/>
-                <textarea placeholder="Provide concise review commentary supporting peer service classification matrices..." required rows="3" style={{ width: '100%', padding: '10px', boxSizing: 'border-box', marginBottom: '15px' }}
-                          onChange={(e) => setComment(e.target.value)} /><br/>
-                <button type="submit" style={{ background: '#0288d1', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                    Publish Accountability Metric
-                </button>
-            </form>
-            {uiStatus && <p style={{ color: '#0288d1', fontWeight: 'bold', fontSize: '0.9em', marginTop: '10px' }}>{uiStatus}</p>}
+        <div style={{ marginTop: '20px' }}>
+            <h4>Peer Feedback ({reviews.length})</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', margin: '15px 0' }}>
+                {reviews.length === 0 ? <p style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No feedback vectors logged for this transaction yet.</p> :
+                    reviews.map(r => (
+                        <div key={r.id} style={{ border: '1px solid var(--border-color)', padding: '12px', borderRadius: '6px', background: 'var(--bg-light)' }}>
+                            <strong>{'⭐'.repeat(r.rating)}</strong>
+                            <p style={{ margin: '5px 0 0 0', fontSize: '0.92em' }}>{r.comment}</p>
+                        </div>
+                    ))
+                }
+            </div>
+            {token && (
+                <form onSubmit={handleSubmitReview} style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border-color)', paddingTop: '15px' }}>
+                    <select value={rating} onChange={(e) => setRating(e.target.value)} style={{ maxWidth: '150px' }}>
+                        <option value="5">⭐⭐⭐⭐⭐ (Excellent)</option>
+                        <option value="4">⭐⭐⭐⭐ (Good)</option>
+                        <option value="3">⭐⭐⭐ (Average)</option>
+                        <option value="2">⭐⭐ (Poor)</option>
+                        <option value="1">⭐ (Unsatisfactory)</option>
+                    </select>
+                    <textarea placeholder="Write an honest peer review regarding fulfillment speed, communication clarity, or product quality..." required value={comment} onChange={(e) => setComment(e.target.value)} rows="3" />
+                    <button type="submit" className="primary" style={{ alignSelf: 'flex-start' }}>Submit Peer Review</button>
+                    {msg && <p style={{ fontSize: '0.9em', fontWeight: 'bold', color: 'var(--success)' }}>{msg}</p>}
+                </form>
+            )}
         </div>
     );
 };

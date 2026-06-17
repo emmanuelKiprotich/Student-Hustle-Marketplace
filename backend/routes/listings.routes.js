@@ -61,6 +61,50 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+router.get('/dashboard/metrics', auth, async (req, res) => {
+    try {
+        const sellerId = req.user.userId; // Captured securely via your verified JWT payload
+
+        // 1. Fetch listings owned by this specific student provider
+        const listingsQuery = await db.query(
+            'SELECT * FROM listings WHERE seller_id = $1 ORDER BY created_at DESC',
+            [sellerId]
+        );
+
+        // 2. Fetch total bookings and calculated capital generation summary metrics
+        const metricsQuery = await db.query(`
+            SELECT 
+                COUNT(b.id) as total_requests,
+                SUM(CASE WHEN b.status = 'completed' THEN l.price ELSE 0 END) as total_earnings
+            FROM bookings b
+            JOIN listings l ON b.listing_id = l.id
+            WHERE l.seller_id = $1
+        `, [sellerId]);
+
+        // 3. Fetch active ongoing order execution tasks
+        const activeOrdersQuery = await db.query(`
+            SELECT b.id, b.status, b.scheduled_date, l.title, u.name as buyer_name
+            FROM bookings b
+            JOIN listings l ON b.listing_id = l.id
+            JOIN users u ON b.buyer_id = u.id
+            WHERE l.seller_id = $1 AND b.status = 'pending'
+            ORDER BY b.scheduled_date ASC
+        `, [sellerId]);
+
+        res.status(200).json({
+            success: true,
+            listings: listingsQuery.rows,
+            summary: {
+                totalRequests: parseInt(metricsQuery.rows[0].total_requests) || 0,
+                totalEarnings: parseFloat(metricsQuery.rows[0].total_earnings) || 0
+            },
+            activeOrders: activeOrdersQuery.rows
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // Restricted Route: Create portfolio catalog entry
 router.post('/', auth, async (req, res) => {
     const { title, description, price, category_id } = req.body;
@@ -74,5 +118,7 @@ router.post('/', auth, async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+
 
 module.exports = router;

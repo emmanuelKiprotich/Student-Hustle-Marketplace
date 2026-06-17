@@ -47,24 +47,31 @@ const Register = ({ setToken }) => {
 
     const handleVerify2FA = async (e) => {
         e.preventDefault();
+        
         try {
             const response = await fetch('http://localhost:5000/api/auth/verify-2fa', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: userIdFor2FA, code: twoFactorCode })
+                body: JSON.stringify({ 
+                    userId: userIdFor2FA, // Mapped to your actual state variable
+                    tfaCode: twoFactorCode // Mapped to the input field state variable
+                })
             });
-            const data = await response.json();
 
+            const data = await response.json();
+            
             if (data.success) {
+                setToken(data.token);
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
-                setToken(data.token);
-                window.location.href = '/';
+                window.location.href = '/dashboard';
             } else {
-                setStatusMessage(`Verification Failed: ${data.message}`);
+                // Fixed to use your actual error message state setter
+                setStatusMessage(data.message); 
             }
         } catch (err) {
-            setStatusMessage('Could not connect to authentication gateway.');
+            console.error("Verification failed:", err);
+            setStatusMessage("Verification request failed to reach the server.");
         }
     };
 
